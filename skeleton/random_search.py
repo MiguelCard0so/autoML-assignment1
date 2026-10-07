@@ -29,15 +29,16 @@ def optimise_random_search(
     if n_trials <= 0:
         raise ValueError("n_trials must be positive")
 
+    rng = np.random.default_rng(seed)
     
     history = []
     best_config = None # this cool guy will be our best handler
     best_objective = float("-inf")  # Assuming higher is better; adjust if lower is better
     cumulative_time = 0.0
-    
+
     for trial in range(n_trials):
-        rf_sample_config = random_forest.sample_configuration(np.random.default_rng(seed + trial))
-        results = evaluator(rf_sample_config, n_trees, seed + trial)
+        rf_sample_config = random_forest.sample_configuration(rng=rng)
+        results = evaluator(rf_sample_config, n_trees, int(rng.integers(2**31 - 1)))
         elapsed_sec = results["elapsed_sec"]
         cumulative_time += elapsed_sec
         history.append({

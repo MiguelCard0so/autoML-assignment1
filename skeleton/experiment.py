@@ -51,7 +51,7 @@ def parse_args() -> argparse.Namespace:
     """Parse the reproducible experiment command-line options."""
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--dataset", default="breast-w", choices=[*DATASETS, "all"])
+    parser.add_argument("--dataset", default="electricity", choices=[*DATASETS, "all"])
     parser.add_argument("--profile", default="course", choices=PROFILES)
     parser.add_argument(
         "--methods",
@@ -145,7 +145,7 @@ def main() -> None:
         # and tables. This example only prints final results; it saves no files.
 
         ### SAVE RESULTS into a json file ###
-        with open(f"results_{name}_seed{args.seed}.json", "w") as f:
+        with open(f"results/results_{name}_seed{args.seed}.json", "w") as f:
             structured_results = {
                 "dataset": name,
                 "seed": args.seed,
@@ -156,32 +156,42 @@ def main() -> None:
 
 
         ### PLOT RESULTS(results, name, args.seed) ###
-        fig, ax = plt.subplots()
+        fig_objective, ax_objective = plt.subplots()
         for result in results:
             method = result["method"]
+            if "history" in result:
+                objective_values = [entry["objective"] for entry in result["history"]]
+                ax_objective.plot(objective_values, label=method)
+            elif method == "foundation":
+                ax_objective.axhline(
+                    result["result"]["auroc"],
+                    color="red",
+                    linestyle="--",
+                    label="Foundation",
+                )
 
-            if "foundation" in args.methods and name == FOUNDATION_DATASET:
-                result = next(r for r in results if r["method"] == "foundation")
-                ax.axhline(result["result"]["auroc"], color="red", linestyle="--", label="Foundation")
-        
-            else:
-                history = result["history"]
-                objective_values = [h["objective"] for h in history]
-                ax.plot(objective_values, label=method)
+        ax_objective.set_xlabel("Evaluation")
+        ax_objective.set_ylabel("Objective Value")
+        ax_objective.set_title(f"Objective Value over Evaluations for {name} (seed={args.seed})")
+        if results:
+            ax_objective.legend()
+        fig_objective.tight_layout()
+        fig_objective.savefig(f"results/objective_plot_{name}_seed{args.seed}.png")
+        plt.close(fig_objective)
 
-            ax.set_xlabel("Iteration")
-            ax.set_ylabel("Objective Value")
-            ax.set_title(f"Objective Value over Iterations for {name} (seed={args.seed})")
-            ax.legend()
-            plt.savefig(f"objective_plot_{name}_seed{args.seed}.png")
-
-            # I also want to plot the time taken for each method
-            if "search_seconds" in result:
-                ax_time = ax.twinx()
-                ax_time.plot([h["objective"] for h in history], [h["elapsed_sec"] for h in history], color="orange", linestyle=":", label="Time Taken")
-                ax_time.set_ylabel("Time Taken (seconds)")
-                ax_time.legend(loc="upper right")
-                plt.savefig(f"time_plot_{name}_seed{args.seed}.png")
+        timed_results = [result for result in results if "search_seconds" in result]
+        if timed_results:
+            fig_time, ax_time = plt.subplots()
+            ax_time.bar(
+                [result["method"] for result in timed_results],
+                [result["search_seconds"] for result in timed_results],
+            )
+            ax_time.set_xlabel("Method")
+            ax_time.set_ylabel("Search Time (seconds)")
+            ax_time.set_title(f"Search Time by Method for {name} (seed={args.seed})")
+            fig_time.tight_layout()
+            fig_time.savefig(f"results/time_plot_{name}_seed{args.seed}.png")
+            plt.close(fig_time)
 
 
 

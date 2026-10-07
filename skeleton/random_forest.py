@@ -26,9 +26,9 @@ N_JOBS = 4
 # Optional starting point. Choose and justify a shared space and sampling rules,
 # or use your optimiser package's search-space tools. Keep tree count separate.
 SEARCH_SPACE = {
-    "max_depth": (None, 4, 16, 32, 64),
-    "max_features": ("sqrt", 0.5, 1.0, "log2"),
-    "min_samples_leaf": (1, 2, 4, 8, 10),
+    "max_depth": (4, 16, 32, 64,  128, None),
+    "max_features": ("log2", "sqrt", 0.5, 1.0),
+    "min_samples_leaf": (1, 2, 4, 8, 10, 16),
 }
 
 
